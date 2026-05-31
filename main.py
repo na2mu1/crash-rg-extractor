@@ -1,40 +1,63 @@
-import tkinter as tk
-from customtkinter import *
+import streamlit as st
 import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-import threading
-import winsound  # Windows এ সাউন্ডের জন্য
+import re
+import json
+from playwright.sync_api import sync_playwright
 
-class CrashRGExtractor:
-    def __init__(self):
-        self.root = CTk()
-        self.root.title("Crash RG Number Extractor")
-        self.root.geometry("850x650")
-        self.root.configure(fg_color="#0f0f0f")
-        
-        self.is_running = False
-        self.driver = None
-        
-        self.setup_ui()
-        
-    def setup_ui(self):
-        # Title
-        title = CTkLabel(self.root, text="🚀 Crash RG Extractor", 
-                        font=CTkFont(size=28, weight="bold"), text_color="#00ff88")
-        title.pack(pady=20)
-        
-        # URL Input
-        CTkLabel(self.root, text="Game Link:", font=CTkFont(size=16)).pack(anchor="w", padx=50, pady=(10,5))
-        self.url_entry = CTkEntry(self.root, width=750, height=45, 
-                                 placeholder_text="https://stake.com/crash/... অথবা অন্য সাইটের লিংক")
-        self.url_entry.pack(padx=50, pady=8)
-        
-        # Controls Frame
-        btn_frame = CTkFrame(self.root, fg_color="transparent")
+# Config লোড
+with open('config.json', 'r', encoding='utf-8') as f:
+    config = json.load(f)
+
+st.set_page_config(page_title="N1ebajee RG Extractor", layout="centered")
+st.title("🚀 N1ebajee Aviator RG Extractor")
+st.caption("অটোমেটিক • প্রতি রাউন্ডের RG নাম্বার দেখাবে")
+
+if st.button("🚀 অ্যাপ শুরু করো", type="primary", use_container_width=True):
+    with st.spinner("ব্রাউজার খুলছে..."):
+        with sync_playwright() as p:
+            # ব্রাউজার চালু (দেখা যাবে)
+            browser = p.chromium.launch(headless=False, slow_mo=400)
+            page = browser.new_page()
+            page.goto(config["url"])
+            
+            st.success("✅ ব্রাউজার খোলা হয়েছে!")
+            st.info("**এখন করণীয়:**\n1. লগইন করো\n2. Aviator গেমে যাও\n3. 'Previous' ট্যাব ওপেন করে রাখো")
+            
+            last_rg = None
+            placeholder = st.empty()
+            status = st.empty()
+            
+            while True:
+                try:
+                    # Aviator গেমের RG নাম্বার খুঁজে বের করার চেষ্টা (আপডেটেড)
+                    page.wait_for_timeout(800)
+                    
+                    # বিভিন্ন সম্ভাব্য উপায়ে RG নাম্বার খুঁজবে
+                    texts = page.evaluate("""
+                        () => {
+                            return Array.from(document.querySelectorAll('*'))
+                                .map(el => el.textContent || '')
+                                .filter(text => /\b\d{6,}\b/.test(text));
+                        }
+                    """)
+                    
+                    for text in texts[-10:]:  # শেষ কয়েকটা চেক
+                        match = re.search(r'(\d{6,})', text)
+                        if match:
+                            current_rg = match.group(1)
+                            if current_rg != last_rg and len(current_rg) >= 6:
+                                last_rg = current_rg
+                                placeholder.success(f"""
+                                🆕 **নতুন রাউন্ড শুরু হয়েছে!**
+
+                                **RG Number:** `{current_rg}`
+                                """)
+                                st.balloons()
+                                break
+                except:
+                    status.info("মনিটরিং চলছে...")
+                
+                time.sleep(1)        btn_frame = CTkFrame(self.root, fg_color="transparent")
         btn_frame.pack(pady=25)
         
         self.start_btn = CTkButton(btn_frame, text="▶ START", width=180, height=55, 
