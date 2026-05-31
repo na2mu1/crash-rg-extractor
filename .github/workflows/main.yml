@@ -1,0 +1,3 @@
+pip install streamlit playwright
+playwright install chromium
+streamlit run main.py
