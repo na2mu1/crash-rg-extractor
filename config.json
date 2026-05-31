@@ -1,0 +1,29 @@
+{
+  "version": "1.2",
+  "refresh_interval": 5,
+  "max_wait_time": 90,
+  "auto_refresh": true,
+  "headless": false,
+  "sites": {
+    "stake": {
+      "name": "Stake.com",
+      "example_url": "https://stake.com/crash"
+    },
+    "bcgame": {
+      "name": "BC.Game",
+      "example_url": "https://bc.game/crash"
+    },
+    "roobet": {
+      "name": "Roobet",
+      "example_url": "https://roobet.com/crash"
+    }
+  },
+  "selectors": [
+    "//*[contains(text(), 'RG')]",
+    "//*[contains(text(), 'Round')]",
+    "//*[contains(text(), 'Channel')]",
+    "//*[contains(text(), 'Game ID')]",
+    "//*[contains(@class, 'round') or contains(@class, 'game-id') or contains(@class, 'session')]",
+    "//span[contains(text(), '#')]"
+  ]
+}
